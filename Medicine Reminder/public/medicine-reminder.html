@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medicine Reminder</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+   ============================================================ */
+:root {
+  --bg:        #f0f2f5;
+  --surface:   #ffffff;
+  --surface2:  #f7f8fa;
+  --border:    rgba(0,0,0,0.08);
+  --text:      #111827;
+  --text2:     #6b7280;
+  --text3:     #9ca3af;
+  --green:     #10b981;
+  --green-bg:  #d1fae5;
+  --green-txt: #065f46;
+  --amber:     #f59e0b;
+  --amber-bg:  #fef3c7;
+  --amber-txt: #92400e;
+  --red:       #ef4444;
+  --red-bg:    #fee2e2;
+  --red-txt:   #991b1b;
+  --blue:      #3b82f6;
+  --blue-bg:   #dbeafe;
+  --blue-txt:  #1e40af;
+  --accent:    #6366f1;
+  --accent2:   #818cf8;
+  --radius:    14px;
+  --radius-sm: 8px;
+  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --trans:     all 0.2s ease;
+}
+[data-theme="dark"] {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --surface2:  #222536;
+  --border:    rgba(255,255,255,0.08);
+  --text:      #f3f4f6;
+  --text2:     #9ca3af;
+  --text3:     #6b7280;
+  --green-bg:  #064e3b;
+  --green-txt: #6ee7b7;
+  --amber-bg:  #78350f;
+  --amber-txt: #fcd34d;
+  --red-bg:    #7f1d1d;
+  --red-txt:   #fca5a5;
+  --blue-bg:   #1e3a8a;
+  --blue-txt:  #93c5fd;
+  --shadow:    0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app-wrapper { max-width: 800px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; font-size: 22px; flex-shrink: 0;
+}
+.header-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+.header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.clock-badge {
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 6px 14px; color: var(--text);
+  box-shadow: var(--shadow); white-space: nowrap;
+}
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--text); transition: var(--trans);
+  box-shadow: var(--shadow);
+}
+.icon-btn:hover { background: var(--surface2); transform: scale(1.05); }
+
+/* ============================================================
+   NOTIFICATION PERMISSION BANNER
+   ============================================================ */
+.notif-banner {
+  background: var(--amber-bg); border: 1px solid var(--amber);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.notif-banner-text { font-size: 13px; color: var(--amber-txt); flex: 1; }
+.notif-banner button {
+  font-size: 12px; font-weight: 500; padding: 5px 12px;
+  border-radius: 6px; border: 1px solid var(--amber);
+  background: var(--amber); color: #fff; cursor: pointer;
+  white-space: nowrap; font-family: inherit;
+}
+.notif-banner button:hover { opacity: 0.85; }
+.hidden { display: none !important; }
+
+/* ============================================================
+   STATS ROW
+   ============================================================ */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-bottom: 1.25rem;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  box-shadow: var(--shadow); text-align: center;
+}
+.stat-num { font-size: 26px; font-weight: 600; line-height: 1; }
+.stat-label { font-size: 11px; color: var(--text2); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.stat-card.s-total .stat-num { color: var(--accent); }
+.stat-card.s-taken .stat-num { color: var(--green); }
+.stat-card.s-pending .stat-num { color: var(--amber); }
+
+/* ============================================================
+   FORM CARD
+   ============================================================ */
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem 1.25rem 1rem;
+  box-shadow: var(--shadow); margin-bottom: 1.25rem;
+}
+.form-card h2 {
+  font-size: 15px; font-weight: 600; margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+@media(max-width:560px) { .form-grid { grid-template-columns: 1fr; } }
+.fgroup { display: flex; flex-direction: column; gap: 5px; }
+.fgroup label { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
+.fgroup input, .fgroup select {
+  padding: 9px 11px; font-size: 14px; font-family: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface2); color: var(--text); outline: none;
+  transition: var(--trans); width: 100%;
+}
+.fgroup input:focus, .fgroup select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+.days-picker {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 2px;
+}
+.day-chip {
+  padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); background: var(--surface2);
+  cursor: pointer; user-select: none; transition: var(--trans); color: var(--text2);
+}
+.day-chip.selected {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+@media(max-width:400px) { .form-row2 { grid-template-columns: 1fr; } }
+.btn-add {
+  width: 100%; margin-top: 12px; padding: 11px;
+  font-size: 14px; font-weight: 600; font-family: inherit;
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius-sm); cursor: pointer; transition: var(--trans);
+  letter-spacing: .2px;
+}
+.btn-add:hover { background: #4f46e5; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.4); }
+.btn-add:active { transform: translateY(0); }
+.err-msg { font-size: 12px; color: var(--red); margin-top: 6px; display: none; }
+
+/* ============================================================
+   SEARCH & FILTER ROW
+   ============================================================ */
+.controls-row {
+  display: flex; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap;
+}
+.search-wrap { flex: 1; position: relative; min-width: 160px; }
+.search-wrap input {
+  width: 100%; padding: 9px 11px 9px 36px; font-size: 14px; font-family: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text); outline: none; transition: var(--trans);
+}
+.search-wrap input:focus { border-color: var(--accent); }
+.search-icon {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  font-size: 15px; color: var(--text3); pointer-events: none;
+}
+.filter-select {
+  padding: 9px 11px; font-size: 13px; font-family: inherit;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text); outline: none; cursor: pointer;
+}
+
+/* ============================================================
+   REMINDER LIST
+   ============================================================ */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: .75rem;
+}
+.section-title { font-size: 15px; font-weight: 600; }
+.reminder-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center; padding: 3rem 1.5rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.empty-sub { font-size: 13px; color: var(--text2); }
+
+/* ============================================================
+   REMINDER CARD
+   ============================================================ */
+.rem-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.1rem;
+  box-shadow: var(--shadow); transition: var(--trans);
+  animation: slideIn 0.25s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rem-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.rem-card.status-taken {
+  border-left: 3px solid var(--green);
+  background: var(--surface);
+  opacity: 0.82;
+}
+.rem-card.status-missed { border-left: 3px solid var(--red); }
+.rem-card.status-pending { border-left: 3px solid var(--amber); }
+.rem-card.ringing {
+  border: 2px solid var(--accent); animation: pulse 0.8s ease infinite alternate;
+}
+@keyframes pulse {
+  from { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); }
+  to   { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+}
+.rem-card.snoozed { border-left: 3px solid var(--blue); }
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.card-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+.med-avatar {
+  width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.status-taken .med-avatar  { background: var(--green-bg); }
+.status-pending .med-avatar { background: var(--amber-bg); }
+.status-missed .med-avatar  { background: var(--red-bg); }
+.snoozed .med-avatar        { background: var(--blue-bg); }
+
+.card-info { flex: 1; min-width: 0; }
+.card-name {
+  font-size: 15px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.status-taken .card-name { text-decoration: line-through; color: var(--text2); }
+.card-meta { font-size: 12px; color: var(--text2); margin-top: 3px; display: flex; flex-wrap: wrap; gap: 8px; }
+.meta-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 500; padding: 2px 8px;
+  border-radius: 20px; white-space: nowrap;
+}
+.chip-time  { background: var(--blue-bg);  color: var(--blue-txt); }
+.chip-freq  { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.chip-dose  { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+.status-badge {
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+  border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+}
+.badge-pending { background: var(--amber-bg); color: var(--amber-txt); }
+.badge-taken   { background: var(--green-bg); color: var(--green-txt); }
+.badge-missed  { background: var(--red-bg);   color: var(--red-txt); }
+.badge-snoozed { background: var(--blue-bg);  color: var(--blue-txt); }
+
+.card-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+.act-btn {
+  height: 32px; padding: 0 11px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface2);
+  cursor: pointer; font-size: 13px; font-family: inherit;
+  color: var(--text); transition: var(--trans); white-space: nowrap; display: flex; align-items: center; gap: 5px;
+}
+.act-btn:hover { transform: scale(1.04); }
+.act-btn.taken-btn:hover { background: var(--green-bg); border-color: var(--green); color: var(--green-txt); }
+.act-btn.snooze-btn:hover { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-txt); }
+.act-btn.del-btn:hover { background: var(--red-bg); border-color: var(--red); color: var(--red-txt); }
+
+.card-days { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px; }
+.day-badge {
+  font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px;
+  background: var(--accent); color: #fff;
+}
+.ringing-label {
+  margin-top: 8px; font-size: 12px; font-weight: 600;
+  color: var(--accent); animation: blink 0.7s ease infinite alternate;
+}
+@keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
+
+/* ============================================================
+   MODAL (ALERT)
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 1rem; backdrop-filter: blur(4px);
+}
+.modal-box {
+  background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); padding: 2rem 1.75rem;
+  max-width: 360px; width: 100%; text-align: center;
+  animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.modal-icon { font-size: 48px; margin-bottom: 12px; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.modal-sub { font-size: 14px; color: var(--text2); margin-bottom: 1.5rem; line-height: 1.6; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.modal-btn {
+  padding: 10px 22px; border-radius: var(--radius-sm); font-size: 14px;
+  font-weight: 600; font-family: inherit; cursor: pointer; transition: var(--trans); border: none;
+}
+.modal-btn.primary { background: var(--green); color: #fff; }
+.modal-btn.primary:hover { background: #059669; }
+.modal-btn.secondary { background: var(--blue); color: #fff; }
+.modal-btn.secondary:hover { background: #2563eb; }
+.modal-btn.danger { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.modal-btn.danger:hover { background: var(--red-bg); color: var(--red-txt); border-color: var(--red); }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast-container {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  display: flex; flex-direction: column; gap: 8px; z-index: 2000;
+}
+.toast {
+  background: var(--text); color: var(--bg); padding: 10px 16px;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow-lg); animation: toastIn 0.25s ease;
+  max-width: 280px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================================================
+   RESPONSIVE TWEAKS
+   ============================================================ */
+@media(max-width:480px) {
+  .stats-row { grid-template-columns: 1fr 1fr 1fr; }
+  .stat-num { font-size: 20px; }
+  .card-actions { flex-direction: column; gap: 4px; }
+  .act-btn { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HTML STRUCTURE
+     ============================================================ -->
+<div class="app-wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="logo-icon">💊</div>
+      <div>
+        <div class="header-title">Medicine Reminder</div>
+        <div class="header-sub">Never miss a dose</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="clock-badge" id="clock">--:-- --</div>
+      <button class="icon-btn" id="darkToggle" title="Toggle dark mode">🌙</button>
+    </div>
+  </header>
+
+  <!-- NOTIFICATION PERMISSION BANNER -->
+  <div class="notif-banner" id="notifBanner">
+    <span class="notif-banner-text">🔔 Enable browser notifications for reliable medicine alerts even when the tab is in background.</span>
+    <button onclick="requestNotifPermission()">Enable</button>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <div class="stat-card s-total"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total</div></div>
+    <div class="stat-card s-taken"><div class="stat-num" id="statTaken">0</div><div class="stat-label">Taken</div></div>
+    <div class="stat-card s-pending"><div class="stat-num" id="statPending">0</div><div class="stat-label">Pending</div></div>
+  </div>
+
+  <!-- ADD REMINDER FORM -->
+  <div class="form-card">
+    <h2>➕ Add Reminder</h2>
+    <div class="form-grid">
+      <div class="fgroup">
+        <label>Medicine Name *</label>
+        <input type="text" id="fName" placeholder="e.g. Paracetamol" autocomplete="off">
+      </div>
+      <div class="fgroup">
+        <label>Dosage (optional)</label>
+        <input type="text" id="fDose" placeholder="e.g. 500mg">
+      </div>
+      <div class="fgroup">
+        <label>Time *</label>
+        <input type="time" id="fTime">
+      </div>
+    </div>
+    <div class="form-row2">
+      <div class="fgroup">
+        <label>Frequency *</label>
+        <select id="fFreq" onchange="toggleDayPicker()">
+          <option value="once">Once</option>
+          <option value="daily">Daily</option>
+          <option value="custom">Custom (select days)</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>Notes (optional)</label>
+        <input type="text" id="fNotes" placeholder="e.g. After food">
+      </div>
+    </div>
+
+    <!-- DAY PICKER (shown for custom) -->
+    <div class="fgroup hidden" id="dayPickerGroup">
+      <label>Select Days *</label>
+      <div class="days-picker" id="dayPicker">
+        <span class="day-chip" data-day="Mon" onclick="toggleDay(this)">Mon</span>
+        <span class="day-chip" data-day="Tue" onclick="toggleDay(this)">Tue</span>
+        <span class="day-chip" data-day="Wed" onclick="toggleDay(this)">Wed</span>
+        <span class="day-chip" data-day="Thu" onclick="toggleDay(this)">Thu</span>
+        <span class="day-chip" data-day="Fri" onclick="toggleDay(this)">Fri</span>
+        <span class="day-chip" data-day="Sat" onclick="toggleDay(this)">Sat</span>
+        <span class="day-chip" data-day="Sun" onclick="toggleDay(this)">Sun</span>
+      </div>
+    </div>
+
+    <div class="err-msg" id="errMsg">⚠ Please fill in all required fields.</div>
+    <button class="btn-add" onclick="addReminder()">+ Add Reminder</button>
+  </div>
+
+  <!-- SEARCH & FILTER -->
+  <div class="controls-row">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchBox" placeholder="Search medicines…" oninput="renderReminders()">
+    </div>
+    <select class="filter-select" id="filterStatus" onchange="renderReminders()">
+      <option value="all">All</option>
+      <option value="pending">Pending</option>
+      <option value="taken">Taken</option>
+      <option value="missed">Missed</option>
+    </select>
+  </div>
+
+  <!-- REMINDER LIST -->
+  <div class="section-header">
+    <div class="section-title">Your Reminders</div>
+  </div>
+  <div class="reminder-list" id="reminderList"></div>
+</div>
+
+<!-- MODAL (notification popup) -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">⏰</div>
+    <div class="modal-title" id="modalTitle">Time to take your medicine!</div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="modalTakenBtn">✔ Mark Taken</button>
+      <button class="modal-btn secondary" id="modalSnoozeBtn">💤 Snooze 5 min</button>
+      <button class="modal-btn danger" onclick="closeModal()">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+let reminders = [];
+let darkMode = false;
+let pendingModalId = null;
+
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init() {
+  loadFromLocalStorage();
+  applyTheme();
+  updateClock();
+  setInterval(updateClock, 1000);
+  setInterval(checkReminders, 30000); // check every 30 seconds
+  checkReminders(); // immediate first check
+  dailyReset();
+  renderReminders();
+  updateStats();
+  updateNotifBanner();
+}
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+function updateClock() {
+  const now = new Date();
+  const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+  document.getElementById('clock').textContent = now.toLocaleTimeString(undefined, opts);
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function applyTheme() {
+  document.body.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+  document.getElementById('darkToggle').textContent = darkMode ? '☀️' : '🌙';
+}
+document.getElementById('darkToggle').addEventListener('click', () => {
+  darkMode = !darkMode;
+  localStorage.setItem('darkMode', darkMode);
+  applyTheme();
+});
+
+/* ============================================================
+   LOCAL STORAGE
+   ============================================================ */
+function saveToLocalStorage() {
+  localStorage.setItem('medReminders_v2', JSON.stringify(reminders));
+}
+
+function loadFromLocalStorage() {
+  darkMode = localStorage.getItem('darkMode') === 'true';
+  const raw = localStorage.getItem('medReminders_v2');
+  reminders = raw ? JSON.parse(raw) : [];
+}
+
+/* ============================================================
+   DAILY RESET — resets "taken" for daily reminders at midnight
+   ============================================================ */
+function dailyReset() {
+  const today = todayStr();
+  const lastReset = localStorage.getItem('lastReset');
+  if (lastReset !== today) {
+    reminders.forEach(r => {
+      if ((r.frequency === 'daily' || r.frequency === 'custom') && r.status === 'taken') {
+        r.status = 'pending';
+        r.lastTriggered = null;
+      }
+    });
+    localStorage.setItem('lastReset', today);
+    saveToLocalStorage();
+  }
+  // schedule next check at midnight
+  const now = new Date();
+  const msToMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1) - now;
+  setTimeout(() => { dailyReset(); }, msToMidnight + 100);
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+
+/* ============================================================
+   FORM HELPERS
+   ============================================================ */
+function toggleDayPicker() {
+  const val = document.getElementById('fFreq').value;
+  document.getElementById('dayPickerGroup').classList.toggle('hidden', val !== 'custom');
+}
+function toggleDay(el) {
+  el.classList.toggle('selected');
+}
+
+/* ============================================================
+   ADD REMINDER
+   ============================================================ */
+function addReminder() {
+  const name = document.getElementById('fName').value.trim();
+  const dose = document.getElementById('fDose').value.trim();
+  const time = document.getElementById('fTime').value;
+  const freq = document.getElementById('fFreq').value;
+  const notes = document.getElementById('fNotes').value.trim();
+
+  // Validate
+  if (!name || !time) {
+    showErr('⚠ Medicine name and time are required.');
+    return;
+  }
+  let days = [];
+  if (freq === 'custom') {
+    days = [...document.querySelectorAll('#dayPicker .day-chip.selected')].map(c => c.dataset.day);
+    if (!days.length) { showErr('⚠ Please select at least one day.'); return; }
+  }
+
+  const reminder = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    name, dose, time, freq, days, notes,
+    status: 'pending',    // pending | taken | missed
+    lastTriggered: null,  // "YYYY-MM-DD HH:MM" — prevents duplicate alerts
+    snoozedUntil: null,   // ISO time string
+    createdAt: new Date().toISOString()
+  };
+
+  reminders.push(reminder);
+  reminders.sort((a,b) => a.time.localeCompare(b.time));
+  saveToLocalStorage();
+  renderReminders();
+  updateStats();
+  resetForm();
+  showToast('✅ Reminder added!');
+  hideErr();
+}
+
+function resetForm() {
+  document.getElementById('fName').value = '';
+  document.getElementById('fDose').value = '';
+  document.getElementById('fTime').value = '';
+  document.getElementById('fFreq').value = 'once';
+  document.getElementById('fNotes').value = '';
+  document.getElementById('dayPickerGroup').classList.add('hidden');
+  document.querySelectorAll('#dayPicker .day-chip').forEach(c => c.classList.remove('selected'));
+}
+function showErr(msg) {
+  const el = document.getElementById('errMsg');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideErr() {
+  document.getElementById('errMsg').style.display = 'none';
+}
+
+/* ============================================================
+   MARK AS TAKEN
+   ============================================================ */
+function markAsTaken(id) {
+  const r = reminders.find(x => x.id === id);
+  if (!r) return;
+  r.status = r.status === 'taken' ? 'pending' : 'taken';
+  r.snoozedUntil = null;
+  saveToLocalStorage();
+  renderReminders();
+  updateStats();
+  showToast(r.status === 'taken' ? '✔ Marked as taken!' : '🔄 Marked as pending.');
+}
+
+/* ============================================================
+   DELETE REMINDER
+   ============================================================ */
+function deleteReminder(id) {
+  reminders = reminders.filter(x => x.id !== id);
+  saveToLocalStorage();
+  renderReminders();
+  updateStats();
+  showToast('🗑 Reminder deleted.');
+}
+
+/* ============================================================
+   SNOOZE
+   ============================================================ */
+function snoozeReminder(id) {
+  const r = reminders.find(x => x.id === id);
+  if (!r) return;
+  const snoozedUntil = new Date(Date.now() + 5 * 60 * 1000);
+  r.snoozedUntil = snoozedUntil.toISOString();
+  r.status = 'pending';
+  r.lastTriggered = null; // allow re-trigger after snooze
+  saveToLocalStorage();
+  renderReminders();
+  updateStats();
+  showToast('💤 Snoozed for 5 minutes.');
+}
+
+/* ============================================================
+   CHECK REMINDERS — runs every 30 seconds
+   ============================================================ */
+function checkReminders() {
+  const now = new Date();
+  const hhmm = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+  const dayName = DAY_NAMES[now.getDay()];
+  const dateKey = todayStr();
+
+  reminders.forEach(r => {
+    if (r.status === 'taken') return;
+
+    // Snooze check
+    if (r.snoozedUntil) {
+      const snoozeEnd = new Date(r.snoozedUntil);
+      if (now < snoozeEnd) return; // still snoozed
+      // snooze expired — clear it
+      r.snoozedUntil = null;
+      saveToLocalStorage();
+    }
+
+    // Frequency check
+    let shouldFire = false;
+    if (r.freq === 'once') {
+      shouldFire = r.time === hhmm && r.status !== 'taken';
+    } else if (r.freq === 'daily') {
+      shouldFire = r.time === hhmm;
+    } else if (r.freq === 'custom') {
+      shouldFire = r.time === hhmm && r.days.includes(dayName);
+    }
+
+    if (!shouldFire) {
+      // Mark as missed if time has passed today and not taken
+      if (r.time < hhmm && r.status === 'pending' && r.freq !== 'once') {
+        // only mark missed if it was scheduled for today
+        if (r.freq === 'daily' || (r.freq === 'custom' && r.days.includes(dayName))) {
+          r.status = 'missed';
+          saveToLocalStorage();
+        }
+      }
+      return;
+    }
+
+    // Duplicate guard — don't fire same reminder twice in same minute
+    const triggerKey = dateKey + ' ' + hhmm;
+    if (r.lastTriggered === triggerKey) return;
+
+    // FIRE!
+    r.lastTriggered = triggerKey;
+    r.status = 'pending'; // ensure not missed when ringing
+    saveToLocalStorage();
+    triggerAlert(r);
+  });
+
+  renderReminders();
+  updateStats();
+}
+
+/* ============================================================
+   TRIGGER ALERT
+   ============================================================ */
+function triggerAlert(r) {
+  playBeep();
+
+  // Browser notification (if permission granted)
+  if (Notification.permission === 'granted') {
+    new Notification('💊 Medicine Reminder', {
+      body: `Time to take ${r.name}${r.dose ? ' — ' + r.dose : ''}`,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💊</text></svg>'
+    });
+  }
+
+  // In-app modal
+  pendingModalId = r.id;
+  document.getElementById('modalTitle').textContent = '⏰ Time to take your medicine!';
+  document.getElementById('modalSub').textContent =
+    `${r.name}${r.dose ? ' — ' + r.dose : ''}${r.notes ? '\n' + r.notes : ''}`;
+  document.getElementById('modalTakenBtn').onclick = () => { markAsTaken(r.id); closeModal(); };
+  document.getElementById('modalSnoozeBtn').onclick = () => { snoozeReminder(r.id); closeModal(); };
+  document.getElementById('modalOverlay').classList.remove('hidden');
+
+  // Highlight card
+  const card = document.getElementById('card-' + r.id);
+  if (card) card.classList.add('ringing');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  if (pendingModalId) {
+    const card = document.getElementById('card-' + pendingModalId);
+    if (card) card.classList.remove('ringing');
+    pendingModalId = null;
+  }
+}
+
+/* ============================================================
+   BEEP SOUND
+   ============================================================ */
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const play = (freq, start, dur) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur);
+    };
+    play(880, 0, 0.18);
+    play(1100, 0.22, 0.18);
+    play(880, 0.44, 0.25);
+  } catch(e) {}
+}
+
+/* ============================================================
+   NOTIFICATION PERMISSION
+   ============================================================ */
+function updateNotifBanner() {
+  if (!('Notification' in window) || Notification.permission === 'granted') {
+    document.getElementById('notifBanner').classList.add('hidden');
+  }
+}
+function requestNotifPermission() {
+  Notification.requestPermission().then(() => updateNotifBanner());
+}
+
+/* ============================================================
+   RENDER REMINDERS
+   ============================================================ */
+function renderReminders() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const statusFilter = document.getElementById('filterStatus').value;
+  const now = new Date();
+  const hhmm = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+
+  let list = reminders.filter(r => {
+    const matchQ = r.name.toLowerCase().includes(q) || (r.dose||'').toLowerCase().includes(q);
+    const matchStatus = statusFilter === 'all' || r.status === statusFilter;
+    return matchQ && matchStatus;
+  });
+
+  const container = document.getElementById('reminderList');
+
+  if (!list.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">💊</div>
+        <div class="empty-title">${q || statusFilter !== 'all' ? 'No matches found' : 'No reminders yet'}</div>
+        <div class="empty-sub">${q || statusFilter !== 'all' ? 'Try adjusting your search or filter.' : 'Add your first medicine reminder above.'}</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(r => {
+    const isSnoozed = r.snoozedUntil && new Date(r.snoozedUntil) > now;
+    const cardStatus = isSnoozed ? 'snoozed' : r.status;
+    const badgeClass = isSnoozed ? 'badge-snoozed' : `badge-${r.status}`;
+    const badgeText  = isSnoozed ? '💤 Snoozed' : r.status === 'taken' ? '✔ Taken' : r.status === 'missed' ? '✘ Missed' : '⏳ Pending';
+    const avatarIcon = r.status === 'taken' ? '✔' : r.status === 'missed' ? '✘' : '💊';
+
+    const freqLabel = r.freq === 'once' ? 'Once' : r.freq === 'daily' ? 'Daily' : 'Custom';
+
+    const daysHtml = r.freq === 'custom' && r.days.length
+      ? `<div class="card-days">${r.days.map(d=>`<span class="day-badge">${d}</span>`).join('')}</div>` : '';
+
+    const snoozeTil = isSnoozed ? `<div style="font-size:11px;color:var(--blue-txt);margin-top:6px">
+      💤 Rings again at ${fmt12FromISO(r.snoozedUntil)}</div>` : '';
+
+    const takenLabel = r.status === 'taken' ? 'Undo' : '✔ Taken';
+
+    return `
+    <div class="rem-card status-${cardStatus}${isSnoozed?' snoozed':''}" id="card-${r.id}">
+      <div class="card-top">
+        <div class="card-left">
+          <div class="med-avatar">${avatarIcon}</div>
+          <div class="card-info">
+            <div class="card-name">${escHtml(r.name)}</div>
+            <div class="card-meta">
+              <span class="meta-chip chip-time">🕐 ${fmt12(r.time)}</span>
+              <span class="meta-chip chip-freq">🔁 ${freqLabel}</span>
+              ${r.dose ? `<span class="meta-chip chip-dose">💊 ${escHtml(r.dose)}</span>` : ''}
+              ${r.notes ? `<span class="meta-chip chip-dose">📝 ${escHtml(r.notes)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <span class="status-badge ${badgeClass}">${badgeText}</span>
+          <div class="card-actions">
+            <button class="act-btn taken-btn" onclick="markAsTaken('${r.id}')">${takenLabel}</button>
+            <button class="act-btn snooze-btn" onclick="snoozeReminder('${r.id}')">💤</button>
+            <button class="act-btn del-btn" onclick="deleteReminder('${r.id}')">🗑</button>
+          </div>
+        </div>
+      </div>
+      ${daysHtml}
+      ${snoozeTil}
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+function updateStats() {
+  const total = reminders.length;
+  const taken = reminders.filter(r => r.status === 'taken').length;
+  const pending = reminders.filter(r => r.status === 'pending').length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statTaken').textContent = taken;
+  document.getElementById('statPending').textContent = pending;
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function pad2(n) { return n.toString().padStart(2,'0'); }
+
+function fmt12(hhmm) {
+  if (!hhmm) return '';
+  const [h,m] = hhmm.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h%12||12}:${pad2(m)} ${ampm}`;
+}
+
+function fmt12FromISO(iso) {
+  const d = new Date(iso);
+  const h = d.getHours(), m = d.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return `${h%12||12}:${pad2(m)} ${ampm}`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================================================
+   CLOSE MODAL ON OVERLAY CLICK
+   ============================================================ */
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+/* ============================================================
+   START APP
+   ============================================================ */
+init();
+</script>
+</body>
+</html>
